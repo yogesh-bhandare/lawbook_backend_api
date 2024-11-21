@@ -2,11 +2,24 @@ from django.db import models
 
 
 class Judgment(models.Model):
+    CATEGORY_CHOICES = [
+        ('judgments', 'Judgments'),
+        ('court_cases', 'Court Cases'),
+        ('articles', 'Articles'),
+        ('laws', 'Laws'),
+    ]
     case_id = models.CharField(max_length=120, unique=True, db_index=True)
     url = models.URLField(blank=True, null=True)
     date_added = models.DateField(auto_now_add=True)
     content = models.TextField(blank=True, null=True)
     summary = models.TextField(blank=True, null=True)
+    category = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        default='judgments',
+        blank=True,
+        null=True
+    )
     timestamp =  models.DateTimeField(auto_now_add=True)
     updated =  models.DateTimeField(auto_now=True)
     metadata = models.JSONField(null=True, blank=True)

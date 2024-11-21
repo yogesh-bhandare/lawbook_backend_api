@@ -34,7 +34,7 @@ if DEBUG:
     ALLOWED_HOSTS += [
         "127.0.0.1",
         "localhost",
-        "192.168.29.7",
+        "192.168.138.7",
     ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -106,18 +106,18 @@ DATABASES = {
     }
 }
 
-# DATABASE_URL = config("DATABASE_URL", default=None)
-# CONN_MAX_AGE = config("CONN_MAX_AGE", cast=int, default=30)
+DATABASE_URL = config("DATABASE_URL", default=None)
+CONN_MAX_AGE = config("CONN_MAX_AGE", cast=int, default=30)
 
-# if DATABASE_URL is not None:
-#     import dj_database_url
-#     DATABASES = {
-#         'default': dj_database_url.config(
-#             default=DATABASE_URL,
-#             conn_max_age=CONN_MAX_AGE,
-#             conn_health_checks=True
-#         )
-#     }
+if DATABASE_URL is not None:
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=CONN_MAX_AGE,
+            conn_health_checks=True
+        )
+    }
 
 
 # Password validation
