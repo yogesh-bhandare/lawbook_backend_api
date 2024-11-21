@@ -1,3 +1,8 @@
-from django.shortcuts import render
+from rest_framework import viewsets
+from .models import Judgment
+from .serializers import JudgmentSerializer
 
-# Create your views here.
+class JudgmentViewSet(viewsets.ModelViewSet):
+    queryset = Judgment.objects.all()
+    serializer_class = JudgmentSerializer
+

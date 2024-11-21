@@ -1,10 +1,12 @@
 from django.db import models
 
+
 class Judgment(models.Model):
     case_id = models.CharField(max_length=120, unique=True, db_index=True)
     url = models.URLField(blank=True, null=True)
     date_added = models.DateField(auto_now_add=True)
     content = models.TextField(blank=True, null=True)
+    summary = models.TextField(blank=True, null=True)
     timestamp =  models.DateTimeField(auto_now_add=True)
     updated =  models.DateTimeField(auto_now=True)
     metadata = models.JSONField(null=True, blank=True)
@@ -18,20 +20,17 @@ class JudgmentScrapeEventManager(models.Manager):
             case_id = obj.get('WID') or None
             url = obj.get('link') or None
             content = obj.get('content') or None
+            summary = obj.get('summary') or None
             if case_id is None or url is None:
                 continue
-
-            # if content:
-            #     content = "\n".join([line.strip() for line in content if line.strip()])
-            # else:
-            #     content = None
             
             judgment, _ = Judgment.objects.update_or_create(
                 case_id=case_id,
                 defaults={
                     "url": url,
                     "content": content,
-                    "metadata": obj,
+                    "summary": summary,
+                    # "metadata": obj,
                 }
             )
             event = self.create(

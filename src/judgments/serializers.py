@@ -1,9 +1,7 @@
-# from rest_framework import serializers
-# from .models import Commodity
+from rest_framework import serializers
+from .models import Judgment
 
-# class CommoditySerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Commodity
-#         fields = '__all__'
-
-
+class JudgmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Judgment
+        fields = ['id', 'case_id', 'date_added', 'content']

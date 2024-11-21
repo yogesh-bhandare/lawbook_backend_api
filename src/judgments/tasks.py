@@ -20,8 +20,12 @@ def scrape_judgment_url_task(url, cnt):
     for item in json_links_data:
         print(f"Scraping URL: {item['link']}")  
         html = helpers.scrape(item['link'])
-        paragraphs = helpers.scrape_page_content(html)
-        item["content"] = paragraphs if paragraphs else "No content found"
+
+        content = helpers.scrape_page_content(html)
+        item["content"] = content if content else "No content found"
+
+        # summary = helpers.extract_content_summary(content)
+        # item["summary"] = summary if summary else "No summary found"
 
     JudgmentScrapeEvent.objects.create_scrape_event(json_links_data)
     return

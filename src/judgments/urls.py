@@ -1,10 +1,10 @@
-# from django.urls import path, include
-# from rest_framework.routers import DefaultRouter
-# from .views import CommodityViewSet
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import JudgmentViewSet
 
-# router = DefaultRouter()
-# router.register(r'l1', CommodityViewSet)
+router = DefaultRouter()
+router.register(r'l1', JudgmentViewSet)
 
-# urlpatterns = [
-#     path('', include(router.urls)),
-# ]
+urlpatterns = [
+    path('', include(router.urls)),
+]
