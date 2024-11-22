@@ -13,3 +13,4 @@ beautifulsoup4
 openai
 djangorestframework
 django-cors-headers
+stream-chat
