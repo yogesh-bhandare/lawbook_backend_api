@@ -62,6 +62,7 @@ INSTALLED_APPS = [
 
     # installed apps
     "judgments",
+    "mootcourt",
 ]
 
 MIDDLEWARE = [
