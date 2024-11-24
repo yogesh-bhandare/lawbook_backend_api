@@ -1,76 +1,70 @@
-import uuid  
-from django.contrib.auth.models import User
-from django.contrib.auth.hashers import make_password, check_password
-from django.core.exceptions import ValidationError
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
-from stream_chat import StreamChat
-from rest_framework.permissions import AllowAny
+from rest_framework import status
 from decouple import config
+from getstream import Stream
+from getstream.models import UserRequest
+import logging
+from .serializers import StreamUserSerializer
 
-STREAM_API_KEY=config("STREAM_API_KEY", default=None)
-STREAM_API_SECRET=config("STREAM_API_SECRET", default=None)
-CHAT_CLIENT = StreamChat(api_key=STREAM_API_KEY, api_secret=STREAM_API_SECRET)
+logger = logging.getLogger(__name__)
 
-class RegisterView(APIView):
-    permission_classes = [AllowAny]
-
+class StreamTokenView(APIView):
     def post(self, request):
-        email = request.data.get('email')
-        password = request.data.get('password')
-
-        if not email or not password:
-            return Response({"message": "Email and password are required."}, status=HTTP_400_BAD_REQUEST)
-
-        if len(password) < 6:
-            return Response({"message": "Password must be at least 6 characters."}, status=HTTP_400_BAD_REQUEST)
-
-        if User.objects.filter(email=email).exists():
-            return Response({"message": "User already exists."}, status=HTTP_400_BAD_REQUEST)
-
         try:
-            unique_id = uuid.uuid4().hex[:10]  
+            # Validate request data using serializer
+            serializer = StreamUserSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(
+                    serializer.errors,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-            user = User.objects.create(
-                username=email,
-                email=email,
-                password=make_password(password),
+            # Get validated data
+            validated_data = serializer.validated_data
+
+            # Get Stream API credentials
+            STREAM_API_KEY = config("STREAM_API_KEY", default=None)
+            STREAM_API_SECRET = config("STREAM_API_SECRET", default=None)
+
+            if not STREAM_API_KEY or not STREAM_API_SECRET:
+                return Response(
+                    {"error": "Stream API configuration is missing"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+            # Initialize Stream client
+            client = Stream(
+                api_key=STREAM_API_KEY,
+                api_secret=STREAM_API_SECRET,
+                timeout=3.0
             )
 
-            CHAT_CLIENT.upsert_user({
-                "id": unique_id,  
-                "email": email,
-                "name": email,
+            # Prepare custom data
+            custom_data = {
+                "email": validated_data.get('email'),
+            }
+
+            # Create or update user in Stream
+            client.upsert_users(
+                UserRequest(
+                    id=validated_data['userId'],
+                    name=validated_data['name'],
+                    image=validated_data['image'],
+                    role="user",
+                    custom=custom_data
+                ),
+            )
+
+            token = client.create_token(user_id=validated_data['userId'], expiration=3600)
+
+            return Response({
+                "token": token,
             })
 
-            token = CHAT_CLIENT.create_token(unique_id)  
-
-            return Response(
-                {"token": token, "user": {"id": unique_id, "email": user.email}},
-                status=HTTP_201_CREATED,
-            )
-
         except Exception as e:
-            return Response({"message": "Error creating user.", "details": str(e)}, status=HTTP_400_BAD_REQUEST)
-
-
-class LoginView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        email = request.data.get('email')
-        password = request.data.get('password')
-
-        try:
-            user = User.objects.get(email=email)
-            if not check_password(password, user.password):
-                raise ValidationError("Invalid credentials.")
-            
-            token = CHAT_CLIENT.create_token(str(user.id))
-            return Response({"token": token, "user": {"id": user.id, "email": user.email}}, status=HTTP_200_OK)
-        
-        except User.DoesNotExist:
-            return Response({"message": "Invalid credentials."}, status=HTTP_400_BAD_REQUEST)
-        except ValidationError as e:
-            return Response({"message": str(e)}, status=HTTP_400_BAD_REQUEST)
+            logger.error(f"Error generating Stream token: {str(e)}")
+            return Response(
+                {"error": "Failed to generate token"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
